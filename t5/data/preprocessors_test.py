@@ -1206,7 +1206,7 @@ class PreprocessorsTest(tf.test.TestCase):
         dataset,
         inputs_fn=lambda features: [features['right'], features['left']],
         targets_fn=lambda features: ['class 0', 'class 1'],
-        label_key='label_idx')
+        is_correct_fn=lambda features: tf.one_hot(features['label_idx'], 2))
 
     test_utils.assert_dataset(
         preprocessor(mode='train'),
@@ -1251,7 +1251,6 @@ class PreprocessorsTest(tf.test.TestCase):
     dataset = tf.data.Dataset.from_tensors({
         'left': 'the sky is blue',
         'right': 'cats are so cute',
-        'label_idx': [1, 2],
     })
 
     preprocessor = functools.partial(
@@ -1259,7 +1258,7 @@ class PreprocessorsTest(tf.test.TestCase):
         dataset,
         inputs_fn=lambda features: [features['right'], features['left'], 'X'],
         targets_fn=lambda features: ['class 0', 'class 1', 'class 2'],
-        label_key='label_idx')
+        is_correct_fn=lambda features: [False, True, True])
 
     test_utils.assert_dataset(
         preprocessor(mode='train'),
@@ -1316,7 +1315,6 @@ class PreprocessorsTest(tf.test.TestCase):
     dataset = tf.data.Dataset.from_tensors({
         'left': 'the sky is blue',
         'right': 'cats are so cute',
-        'label': [0, 2],
     })
 
     with self.assertRaisesRegex(
@@ -1325,7 +1323,8 @@ class PreprocessorsTest(tf.test.TestCase):
       list(prep.rank_classification(
           dataset,
           inputs_fn=lambda features: tf.stack([features['right']]),
-          targets_fn=lambda features: tf.stack(['class 0', 'class 1'])))
+          targets_fn=lambda features: tf.stack(['class 0', 'class 1']),
+          is_correct_fn=lambda features: [False, True, True]))
 
     with self.assertRaisesRegex(
         tf.errors.InvalidArgumentError,
@@ -1334,7 +1333,8 @@ class PreprocessorsTest(tf.test.TestCase):
           dataset,
           inputs_fn=
           lambda features: tf.stack([features['right'], features['left']]),
-          targets_fn=lambda features: tf.stack(['class 0', 'class 1'])))
+          targets_fn=lambda features: tf.stack(['class 0', 'class 1']),
+          is_correct_fn=lambda features: [False, True, True]))
 
   def test_rank_classification_formatter(self):
     input_examples = [
